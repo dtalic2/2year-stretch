@@ -74,12 +74,14 @@
 
     <script>
         // Target date: September 1, 2027 at midnight AEST (UTC+10)
-        // Convert to UTC for calculations
         const targetDate = new Date('2027-09-01T00:00:00+10:00');
         
         function updateCountdown() {
+            // Get current time in AEST
             const now = new Date();
-            const timeDifference = targetDate - now;
+            const nowAEST = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Sydney"}));
+            
+            const timeDifference = targetDate - nowAEST;
             
             if (timeDifference <= 0) {
                 document.getElementById('weeksDisplay').textContent = '0';
@@ -93,9 +95,39 @@
             const hours = Math.floor(minutes / 60);
             const days = Math.floor(hours / 24);
             const weeks = Math.floor(days / 7);
-            const months = Math.floor(days / 30.44); // Average days per month
             
-            // Display weeks (rounded to nearest week)
+            // Calculate months more accurately by counting actual calendar months
+            let months = 0;
+            let currentDate = new Date(nowAEST);
+            let targetDateCopy = new Date(targetDate);
+            
+            // Set both dates to the same day of month for accurate month counting
+            const currentDay = currentDate.getDate();
+            const targetDay = targetDateCopy.getDate();
+            
+            // Adjust target date to match current day if possible
+            if (targetDay > currentDay) {
+                targetDateCopy.setDate(currentDay);
+            }
+            
+            // Count months
+            while (currentDate < targetDateCopy) {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                if (currentDate <= targetDateCopy) {
+                    months++;
+                } else {
+                    currentDate.setMonth(currentDate.getMonth() - 1);
+                    break;
+                }
+            }
+            
+            // Calculate remaining time after accounting for months
+            const remainingTime = targetDate - currentDate;
+            const remainingDays = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
+            const remainingWeeks = Math.floor(remainingDays / 7);
+            const finalRemainingDays = remainingDays % 7;
+            
+            // Display weeks (total weeks)
             document.getElementById('weeksDisplay').textContent = weeks.toLocaleString();
             
             // Display full countdown
@@ -104,10 +136,10 @@
                     <span class="countdown-value">${months}</span> months
                 </span>
                 <span class="countdown-item">
-                    <span class="countdown-value">${weeks % 52}</span> weeks
+                    <span class="countdown-value">${remainingWeeks}</span> weeks
                 </span>
                 <span class="countdown-item">
-                    <span class="countdown-value">${days % 7}</span> days
+                    <span class="countdown-value">${finalRemainingDays}</span> days
                 </span>
                 <span class="countdown-item">
                     <span class="countdown-value">${hours % 24}</span> hours
